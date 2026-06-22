@@ -1,0 +1,14 @@
+numpy
+pandas
+scikit-learn
+xgboost
+javalang
+python-Levenshtein
+fuzzywuzzy
+rapidfuzz
+pygments
+tqdm
+joblib
+matplotlib
+seaborn
+pytest
