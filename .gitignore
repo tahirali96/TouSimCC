@@ -13,4 +13,8 @@ Thumbs.db
 *.log
 
 # Environment
-.env
+.env# caches and results
+__pycache__/
+*.pyc
+results/
+similarity_kernels.py.bak
