@@ -83,9 +83,45 @@ def sim_ngram(seq1, seq2, n=15):
 
 # TF-IDF cosine similarity
 def sim_tfidf(seq1, seq2):
-    corpus = [" ".join(seq1), " ".join(seq2)]
-    mat = TfidfVectorizer().fit_transform(corpus)
-    return float(mat[0] @ mat[1].T)
+    """
+    TF-IDF cosine similarity robust to token lists and non-word tokens.
+    Accepts either token lists or already-joined strings.
+    Falls back to a token_pattern that treats any non-space chunk as a token.
+    If TF-IDF still yields empty vocab, falls back to a bag-of-words cosine.
+    """
+    # Accept either lists of tokens or strings
+    if isinstance(seq1, (list, tuple)):
+        s1 = " ".join(seq1)
+    else:
+        s1 = str(seq1)
+
+    if isinstance(seq2, (list, tuple)):
+        s2 = " ".join(seq2)
+    else:
+        s2 = str(seq2)
+
+    # Primary attempt: default vectorizer (works for normal code with word tokens)
+    try:
+        mat = TfidfVectorizer().fit_transform([s1, s2])
+        # mat[0] @ mat[1].T is 1x1 sparse matrix; convert to scalar
+        sim = (mat[0] @ mat[1].T).toarray()[0, 0]
+        return float(sim)
+    except ValueError:
+        # Fallback: treat any non-space sequence as a token (keeps punctuation/symbols)
+        try:
+            mat = TfidfVectorizer(token_pattern=r"(?u)\S+").fit_transform([s1, s2])
+            sim = (mat[0] @ mat[1].T).toarray()[0, 0]
+            return float(sim)
+        except ValueError:
+            # Last fallback: compute simple bag-of-words cosine using counters
+            from collections import Counter
+            c1, c2 = Counter(s1.split()), Counter(s2.split())
+            vocab = list(set(c1) | set(c2))
+            v1 = [c1.get(w, 0) for w in vocab]
+            v2 = [c2.get(w, 0) for w in vocab]
+            dot = sum(x * y for x, y in zip(v1, v2))
+            mag = (sum(x * x for x in v1) ** 0.5) * (sum(y * y for y in v2) ** 0.5)
+            return dot / mag if mag else 0.0
 
 ##### AST-inspired and hashing
 
